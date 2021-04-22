@@ -26,12 +26,12 @@ endif ()
 
 find_path (NIIMAQDX_INCLUDE_DIR NIIMAQdx.h
     PATHS
-    "${NIIMAQDX_DIR}/Shared/ExternalCompilerSupport/C/Include"
+    "${NIIMAQDX_DIR}/Shared/CVI/Include"
     DOC "Directory containing NIIMAQdx.h include file")
 
 find_library (NIIMAQDX_LIBRARIES NAMES niimaqdx
     PATHS
-    "${NIIMAQDX_DIR}/Shared/ExternalCompilerSupport/C/Lib32/MSVC"
+    "${NIIMAQDX_DIR}/Shared/CVI/Bin/msvc64"
     DOC "NI-IMAQdx library to link with")
 
 include (FindPackageHandleStandardArgs)
