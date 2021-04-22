@@ -200,6 +200,8 @@ ImaqDxCapsInfo imaq_dx_caps_infos[] = {
   ,
   {"BayerRG8", 0, VIDEO_CAPS_MAKE_BAYER8 ("rggb"), 8, 8, 1}
   ,
+  {"BayerRG8-Bit", 0, VIDEO_CAPS_MAKE_BAYER8 ("rggb"), 8, 8, 1}
+  ,
   {"BayerGB8", 0, VIDEO_CAPS_MAKE_BAYER8 ("gbrg"), 8, 8, 1}
   ,
   {"BayerBG10", 0, VIDEO_CAPS_MAKE_BAYER16 ("bggr16", "1234"), 10, 16, 1}
