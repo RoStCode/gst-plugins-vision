@@ -34,18 +34,18 @@ endif (NOT XCLIB_DIR)
 
 find_path (XCLIB_INCLUDE_DIR xcliball.h
     PATHS
-    "${XCLIB_DIR}"
+    "${XCLIB_DIR}/inc"
     DOC "Directory containing xcliball.h include file")
 
 if (CMAKE_SIZEOF_VOID_P MATCHES "8")
     find_library (XCLIB_LIBRARIES NAMES XCLIBW64
         PATHS
-        "${XCLIB_DIR}"
+        "${XCLIB_DIR}/lib"
         DOC "XCLIB 64-bit library to link with")
 else ()
     find_library (XCLIB_LIBRARIES NAMES XCLIBWNT
         PATHS
-        "${XCLIB_DIR}"
+        "${XCLIB_DIR}/lib"
         DOC "XCLIB 32-bit library to link with")
 endif ()
 
