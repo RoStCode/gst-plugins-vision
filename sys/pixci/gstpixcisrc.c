@@ -576,7 +576,6 @@ gst_pixcisrc_get_caps (GstBaseSrc * bsrc, GstCaps * filter)
   if (!src->pixci_open) {
     caps = gst_pad_get_pad_template_caps (GST_BASE_SRC_PAD (src));
   } else {
-    gint components, bits_per_component;
     gdouble par;
     GstVideoInfo vinfo;
 
@@ -592,21 +591,24 @@ gst_pixcisrc_get_caps (GstBaseSrc * bsrc, GstCaps * filter)
       vinfo.par_n = (gint) (par * vinfo.par_d);
     }
 
-    bits_per_component = pxd_imageBdim ();
-    components = pxd_imageCdim ();
+    src->bits_per_component = pxd_imageBdim ();
+    src->components = pxd_imageCdim ();
 
-    if (components == 1 && bits_per_component <= 8) {
+    if (src->components == 1 && src->bits_per_component <= 8) {
+      src->format = GST_VIDEO_FORMAT_GRAY8;
       gst_video_info_set_format (&vinfo, GST_VIDEO_FORMAT_GRAY8, width, height);
       caps = gst_video_info_to_caps (&vinfo);
-    } else if (components == 1 &&
-        bits_per_component > 8 && bits_per_component <= 16) {
+    } else if (src->components == 1 &&
+        src->bits_per_component > 8 && src->bits_per_component <= 16) {
       GValue val = G_VALUE_INIT;
       GstStructure *s;
 
       if (G_BYTE_ORDER == G_LITTLE_ENDIAN) {
+        src->format = GST_VIDEO_FORMAT_GRAY16_LE;
         gst_video_info_set_format (&vinfo, GST_VIDEO_FORMAT_GRAY16_LE, width,
             height);
       } else if (G_BYTE_ORDER == G_BIG_ENDIAN) {
+        src->format = GST_VIDEO_FORMAT_GRAY16_BE;
         gst_video_info_set_format (&vinfo, GST_VIDEO_FORMAT_GRAY16_BE, width,
             height);
       }
@@ -615,7 +617,7 @@ gst_pixcisrc_get_caps (GstBaseSrc * bsrc, GstCaps * filter)
       /* set bpp, extra info for GRAY16 so elements can scale properly */
       s = gst_caps_get_structure (caps, 0);
       g_value_init (&val, G_TYPE_INT);
-      g_value_set_int (&val, bits_per_component);
+      g_value_set_int (&val, src->bits_per_component);
       gst_structure_set_value (s, "bpp", &val);
       g_value_unset (&val);
     } else {
@@ -745,6 +747,17 @@ gst_pixcisrc_create (GstPushSrc * psrc, GstBuffer ** buf)
   /* TODO: must use readuchar for 8-bit buffers */
   pxd_readushort (src->unitmap, buffer, 0, 0, -1, -1, minfo.data, minfo.size,
       "Grey");
+
+  /* Make XCLIB ushort pixels into gStreamer GRAY16_LE pixels */
+  if (src->format == GST_VIDEO_FORMAT_GRAY16_LE &&
+      src->components == 1 &&
+      src->bits_per_component > 8 && src->bits_per_component <= 16) {
+    gint bitshifts = 16 - src->bits_per_component;
+    for (i = 0; i < minfo.size; i++) {
+      minfo.data[i] = minfo.data[i] << bitshifts;
+    }
+  }
+
   //for (i = 0; i < src->height; i++) {
   //  memcpy (minfo.data + i * src->gst_stride,
   //      ((guint8 *) buffer.pvAddress) + i * src->px_stride,

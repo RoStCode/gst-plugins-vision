@@ -130,6 +130,10 @@ struct _GstPixciSrc
   gint gst_stride;
   guint px_stride;
 
+  GstVideoFormat format;
+  gint components;
+  gint bits_per_component;
+
   GMutex mutex;
   GCond cond;
 };
