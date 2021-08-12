@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION "2.8.0")
 project(gst-plugins-vision)
 
 option(ENABLE_KLV "Whether to enable KLV support" OFF)
+option(ENABLE_SENSORFX "Whether to enable build of sensorfx plugin" OFF)
 
 set(CMAKE_SHARED_MODULE_PREFIX "lib")
 set(CMAKE_SHARED_LIBRARY_PREFIX "lib")

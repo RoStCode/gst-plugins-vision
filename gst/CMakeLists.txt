@@ -1,4 +1,4 @@
-if (OPENCV_FOUND)
+if (OPENCV_FOUND AND ENABLE_SENSORFX)
   add_subdirectory (sensorfx)
 endif (OPENCV_FOUND)
 

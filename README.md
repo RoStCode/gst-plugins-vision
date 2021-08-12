@@ -114,6 +114,11 @@ cmake --build . --target PACKAGE
 make package
 ```
 
+## sensorfx
+
+This gstreamer plugin has to be migrated to GStreamer 1.1 and the dependency to https://github.com/Elleo/gst-opencv has to be configured in the build.
+The plugin is included with the flag -DENABLE_SENSORFX=ON
+
 ## KLV
 
 KLV support is based on a GStreamer [merge request](https://gitlab.freedesktop.org/gstreamer/gst-plugins-base/-/merge_requests/124) that has yet to be merged, so it is included here in the klv library. By default KLV support is disabled. To enable it set the CMake flag `ENABLE_KLV`. This will create the klv plugin, and make the pleora plugin dependent on the klv library. You'll need to ensure `libgstklv-1.0-1.dll` is in the system `PATH` on Windows, or on Linux make sure `libgstklv-1.0-1.so` is in the `LD_LIBRARY_PATH`.
