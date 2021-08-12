@@ -156,6 +156,8 @@ static GstStaticCaps unix_reference = GST_STATIC_CAPS ("timestamp/x-unix");
 ImaqDxCapsInfo imaq_dx_caps_infos[] = {
   {"Mono8", 0, GST_VIDEO_CAPS_MAKE ("GRAY8"), 8, 8, 4}
   ,
+  {"Monochrome8-Bit", 0, GST_VIDEO_CAPS_MAKE ("GRAY8"), 8, 8, 4}
+  ,
   {"Mono10", G_LITTLE_ENDIAN, GST_VIDEO_CAPS_MAKE ("GRAY16_LE"), 10, 16, 4}
   ,
   {"Mono10", G_BIG_ENDIAN, GST_VIDEO_CAPS_MAKE ("GRAY16_BE"), 10, 16, 4}
