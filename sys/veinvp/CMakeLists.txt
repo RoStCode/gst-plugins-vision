@@ -1,13 +1,13 @@
 set (SOURCES
-  gstpixcisrc.c)
+  gstveinvpsrc.c)
     
 set (HEADERS
-  gstpixcisrc.h)
+  gstveinvpsrc.h)
 
 include_directories (AFTER
   ${XCLIB_INCLUDE_DIR})
 
-set (libname gstpixci)
+set (libname gstveinvp)
 
 add_library (${libname} MODULE
   ${SOURCES}

@@ -38,7 +38,7 @@
 #include <gst/base/gstpushsrc.h>
 #include <gst/video/video.h>
 
-#include "gstpixcisrc.h"
+#include "gstveinvpsrc.h"
 
 GST_DEBUG_CATEGORY_STATIC (gst_pixcisrc_debug);
 #define GST_CAT_DEFAULT gst_pixcisrc_debug
@@ -793,9 +793,9 @@ gst_pixcisrc_create (GstPushSrc * psrc, GstBuffer ** buf)
 static gboolean
 plugin_init (GstPlugin * plugin)
 {
-  GST_DEBUG_CATEGORY_INIT (gst_pixcisrc_debug, "pixcisrc", 0,
+  GST_DEBUG_CATEGORY_INIT (gst_pixcisrc_debug, "veinvpsrc", 0,
       "debug category for pixcisrc element");
-  gst_element_register (plugin, "pixcisrc", GST_RANK_NONE,
+  gst_element_register (plugin, "veinvpsrc", GST_RANK_NONE,
       gst_pixcisrc_get_type ());
 
   return TRUE;
@@ -803,7 +803,7 @@ plugin_init (GstPlugin * plugin)
 
 GST_PLUGIN_DEFINE (GST_VERSION_MAJOR,
     GST_VERSION_MINOR,
-    pixci,
+    veinvp,
     "Pixci frame grabber source",
     plugin_init, GST_PACKAGE_VERSION, GST_PACKAGE_LICENSE, GST_PACKAGE_NAME,
     GST_PACKAGE_ORIGIN)

@@ -70,4 +70,5 @@ endif (SAPERA_FOUND)
 
 if (XCLIB_FOUND)
 	add_subdirectory(pixci)
+	add_subdirectory(veinvp)
 endif (XCLIB_FOUND)
