@@ -1,11 +1,11 @@
 set (SOURCES
   gstveinvpsrc.c)
-    
+
 set (HEADERS
   gstveinvpsrc.h)
 
 include_directories (AFTER
-  ${XCLIB_INCLUDE_DIR})
+  ${VEINVP_INCLUDE_DIR})
 
 set (libname gstveinvp)
 
@@ -19,8 +19,9 @@ target_link_libraries (${libname}
   ${GSTREAMER_LIBRARY}
   ${GSTREAMER_BASE_LIBRARY}
   ${GSTREAMER_VIDEO_LIBRARY}
-  ${XCLIB_LIBRARIES})
-  
+  ${VEINVP_LIBRARIES}
+  ${VEINVP_LIBRARIES2})
+
 if (WIN32)
   install (FILES $<TARGET_PDB_FILE:${libname}> DESTINATION ${PDB_INSTALL_DIR} COMPONENT pdb OPTIONAL)
 endif ()

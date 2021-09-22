@@ -118,6 +118,8 @@ macro_log_feature(SAPERA_FOUND "Teledyne DALSA Sapera" "Required to build Teledy
 find_package(XCLIB)
 macro_log_feature(XCLIB_FOUND "EPIX PIXCI" "Required to build EPIX PIXCI source element" "http://www.epixinc.com/" FALSE)
 
+find_package(VEINVP)
+macro_log_feature(VEINVP_FOUND "Veoneer Invp" "Required to build veinvp source element" "N/A" FALSE)
 
 # Setup common environment
 include_directories(

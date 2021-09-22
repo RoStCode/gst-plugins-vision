@@ -38,6 +38,8 @@
 #include <gst/base/gstpushsrc.h>
 #include <gst/video/video.h>
 
+#include "WinInvpbobDriver_lib.h"
+
 #include "gstveinvpsrc.h"
 
 GST_DEBUG_CATEGORY_STATIC (gst_pixcisrc_debug);
@@ -71,7 +73,7 @@ enum
   PROP_TIMEOUT
 };
 
-#define DEFAULT_PROP_FORMAT_NAME GST_PIXCI_VIDEO_FORMAT_RS_170
+#define DEFAULT_PROP_FORMAT_NAME GST_VEINVP_VIDEO_FORMAT_NV4
 #define DEFAULT_PROP_FORMAT_FILE ""
 #define DEFAULT_PROP_DRIVER_PARAMS ""
 #define DEFAULT_PROP_NUM_CAPTURE_BUFFERS 2
@@ -95,100 +97,10 @@ gst_pixci_video_format_get_type (void)
 {
   static GType pixci_video_format_type = 0;
   static const GEnumValue pixci_video_format[] = {
-    {GST_PIXCI_VIDEO_FORMAT_CCIR, "CCIR",
-        "CCIR composite video, capturing 720 pixels per line, 574 lines, monochrome grey level pixels."},
-    {GST_PIXCI_VIDEO_FORMAT_CCIR_SQR, "CCIR(SQR)",
-        "CCIR composite video, capturing 768 pixels per line, 576 lines, monochrome grey level pixels, yielding pixels with a 1:1 aspect ratio."},
-    {GST_PIXCI_VIDEO_FORMAT_NTSC, "NTSC",
-        "NTSC composite video, capturing 720 pixels per line, 480 lines, color YCrCb pixels."},
-    {GST_PIXCI_VIDEO_FORMAT_NTSC_4_43, "NTSC(4.43)",
-        "NTSC(4.43) composite video, capturing 720 pixels per line, 480 lines, color YCrCb pixels."},
-    {GST_PIXCI_VIDEO_FORMAT_NTSC_J, "NTSC(J)",
-        "NTSC(J) composite video, capturing 720 pixels per line, 480 lines, color YCrCb pixels."},
-    {GST_PIXCI_VIDEO_FORMAT_NTSC_SQR, "NTSC(SQR)",
-        "NTSC composite video, capturing 640 pixels per line, 480 lines, color YCrCb pixels using the High Density BNC connector closest to the S-Video connector, yielding pixels with a 1:1 aspect ratio."},
-    {GST_PIXCI_VIDEO_FORMAT_NTSC_YC, "NTSC/YC",
-        "NTSC S-Video, capturing 720 pixels per line, 480 lines, color YCrCb pixels."},
-    {GST_PIXCI_VIDEO_FORMAT_NTSC_YC_SQR, "NTSC/YC(SQR)",
-        "NTSC S-Video, capturing 640 pixels per line, 480 lines, color YCrCb pixels using the S-Video connector, yielding pixels with a 1:1 aspect ratio."},
-    {GST_PIXCI_VIDEO_FORMAT_PAL, "PAL",
-        "PAL (B,D,G,H,I) composite video, capturing 720 pixels per line, 576 lines, color YCrCb pixels."},
-    {GST_PIXCI_VIDEO_FORMAT_PAL_60, "PAL(60)",
-        "PAL(60) composite video, capturing 720 pixels per line, 576 lines, color YCrCb pixels."},
-    {GST_PIXCI_VIDEO_FORMAT_PAL_M, "PAL(M)",
-        "PAL(M) composite video, capturing 920 pixels per line, 576 lines, color YCrCb or color RGB."},
-    {GST_PIXCI_VIDEO_FORMAT_PAL_M_YC, "PAL(M)/YC",
-        "PAL(M) S-VIDEO (Super VHS), capturing 920 pixels per line, 576 lines, color YCrCb or color RGB."},
-    {GST_PIXCI_VIDEO_FORMAT_PAL_N, "PAL(N)",
-        "PAL(N) composite video, capturing 920 pixels per line, 576 lines, color YCrCb or color RGB."},
-    {GST_PIXCI_VIDEO_FORMAT_PAL_N_YC, "PAL(N)/YC",
-        "PAL(N) S-VIDEO (Super VHS), capturing 920 pixels per line, 576 lines, color YCrCb or color RGB."},
-    {GST_PIXCI_VIDEO_FORMAT_PAL_SQR, "PAL(SQR)",
-        "PAL (B,D,G,H,I) composite video, capturing 768 pixels per line, 576 lines, color YCrCb pixels, yielding pixels with a 1:1 aspect ratio."},
-    {GST_PIXCI_VIDEO_FORMAT_PAL_YC, "PAL/YC",
-        "PAL (B,D,G,H,I) S-Video, capturing 720 pixels per line, 576 lines, color YCrCb pixels."},
-    {GST_PIXCI_VIDEO_FORMAT_PAL_YC_SQR, "PAL/YC(SQR)",
-        "PAL (B,D,G,H,I) S-Video, capturing 768 pixels per line, 576 lines, color YCrCb pixels using the S-Video connector, yielding pixels with a 1:1 aspect ratio."},
-    {GST_PIXCI_VIDEO_FORMAT_RS_170, "RS-170",
-        "RS-170 composite video, capturing 720 pixels per line, 480 lines, monochrome grey level pixels."},
-    {GST_PIXCI_VIDEO_FORMAT_RS_170_SQR, "RS-170(SQR)",
-        "RS-170 composite video, capturing 640 pixels per line, 480 lines, monochrome grey level pixels using the High Density BNC connector closest to the S-Video connector, yielding pixels with a 1:1 aspect ratio."},
-    {GST_PIXCI_VIDEO_FORMAT_RS343_875i_60Hz, "RS343 875i 60Hz",
-        "Composite interlaced RS-343 video, 875 total lines per frame, 60 Hz, capturing 1332 pixels per line, 806 lines, monochrome grey level pixels."},
-    {GST_PIXCI_VIDEO_FORMAT_RS343_875i_60Hz_RGB, "RS343 875i 60Hz RGB",
-        "Interlaced RS-343 RGB component video, composite sync on green, 875 total lines per frame, 60 Hz, capturing 1332 pixels per line, 806 lines, RGB color pixels."},
-    {GST_PIXCI_VIDEO_FORMAT_SECAM, "SECAM",
-        "SECAM composite video, capturing 920 pixels per line, 576 lines, color YCrCb or color RGB."},
-    {GST_PIXCI_VIDEO_FORMAT_SECAM_YC, "SECAM/YC",
-        "SECAM S-VIDEO (Super VHS), capturing 920 pixels per line, 576 lines, color YCrCb or color RGB."},
-    {GST_PIXCI_VIDEO_FORMAT_SVGA_800x600_60Hz_RGB, "SVGA 800x600 60Hz RGB",
-        "Progressive RGB+HSYNC+VSYNC component SVGA video, 60.371 Hz, capturing 800 pixels per line, 600 lines, RGB color pixels."},
-    {GST_PIXCI_VIDEO_FORMAT_SXGA_1280x1024_60Hz_RGB, "SXGA 1280x1024 60Hz RGB",
-        "Progressive RGB+HSYNC+VSYNC component SXGA video, 60.02 Hz, capturing 1280 pixels per line, 1024 lines, RGB color pixels."},
-    {GST_PIXCI_VIDEO_FORMAT_VGA_640x480_60Hz_RGB, "VGA 640x480 60Hz RGB",
-        "Progressive RGB+HSYNC+VSYNC component VGA video, 59.94 Hz, capturing 640 pixels per line, 480 lines, RGB color pixels."},
-    {GST_PIXCI_VIDEO_FORMAT_Video_1280x720p_50Hz, "Video 1280x720p 50Hz",
-        "Composite progressive video, 50 Hz, capturing 1280 pixels per line, 720 lines, monochrome grey level pixels."},
-    {GST_PIXCI_VIDEO_FORMAT_Video_1280x720p_50Hz_RGB,
-          "Video 1280x720p 50Hz RGB",
-        "Progressive RGB component video, composite sync on green, 50 Hz, capturing 1280 pixels per line, 720 lines, RGB color pixels."},
-    {GST_PIXCI_VIDEO_FORMAT_Video_1280x720p_60Hz, "Video 1280x720p 60Hz",
-        "Composite progressive video, 60 Hz, capturing 1280 pixels per line, 720 lines, monochrome grey level pixels."},
-    {GST_PIXCI_VIDEO_FORMAT_Video_1280x720p_60Hz_RGB,
-          "Video 1280x720p 60Hz RGB",
-        "Progressive RGB component video, composite sync on green, 60 Hz, capturing 1280 pixels per line, 720 lines, RGB color pixels."},
-    {GST_PIXCI_VIDEO_FORMAT_Video_1920x1080i_50Hz, "Video 1920x1080i 50Hz",
-        "Composite interlaced video, 50 Hz, capturing 1920 pixels per line, 1080 lines, monochrome grey level pixels."},
-    {GST_PIXCI_VIDEO_FORMAT_Video_1920x1080i_50Hz_RGB,
-          "Video 1920x1080i 50Hz RGB",
-        "Interlaced RGB component video, composite sync on green, 50 Hz, capturing 1920 pixels per line, 1080 lines, RGB color pixels."},
-    {GST_PIXCI_VIDEO_FORMAT_Video_1920x1080i_60Hz, "Video 1920x1080i 60Hz",
-        "Composite interlaced video, 60 Hz, capturing 1920 pixels per line, 1080 lines, monochrome grey level pixels."},
-    {GST_PIXCI_VIDEO_FORMAT_Video_1920x1080i_60Hz_RGB,
-          "Video 1920x1080i 60Hz RGB",
-        "Interlaced RGB component video, composite sync on green, 60 Hz, capturing 1920 pixels per line, 1080 lines, RGB color pixels."},
-    {GST_PIXCI_VIDEO_FORMAT_Video_720x480i_60Hz, "Video 720x480i 60Hz",
-        "Composite interlaced video, 525 total lines per frame, 60 Hz, capturing 720 pixels per line, 480 lines, monochrome grey level pixels. Same as 'RS-170'."},
-    {GST_PIXCI_VIDEO_FORMAT_Video_720x480i_60Hz_Color,
-          "Video 720x480i 60Hz Color",
-        "Composite video, capturing 720 pixels per line, 480 lines, color YCrCb pixels. Same as 'NTSC'."},
-    {GST_PIXCI_VIDEO_FORMAT_Video_720x480i_60Hz_RGB, "Video 720x480i 60Hz RGB",
-        "Interlaced RGB component video, composite sync on green, 525 total lines per frame, 60 Hz, capturing 720 pixels per line, 480 lines, RGB color pixels."},
-    {GST_PIXCI_VIDEO_FORMAT_Video_720x480i_60Hz_Y_Color,
-          "Video 720x480i 60Hz Y/Color",
-        "NTSC S-Video, capturing 720 pixels per line, 480 lines, color YCrCb pixels. Same as 'NTSC/YC'."},
-    {GST_PIXCI_VIDEO_FORMAT_Video_720x576i_50Hz, "Video 720x576i 50Hz",
-        "Composite interlaced video, 625 total lines per frame, 50 Hz, capturing 720 pixels per line, 576 lines, monochrome grey level pixels. Same as 'CCIR'."},
-    {GST_PIXCI_VIDEO_FORMAT_Video_720x576i_50Hz_Color,
-          "Video 720x576i 50Hz Color",
-        "Composite video, capturing 720 pixels per line, 576 lines, color YCrCb pixels. Same as 'PAL'."},
-    {GST_PIXCI_VIDEO_FORMAT_Video_720x576i_50Hz_RGB, "Video 720x576i 50Hz RGB",
-        "Interlaced RGB component video, composite sync on green, 625 total lines per frame, 50 Hz, capturing 720 pixels per line, 576 lines, RGB color pixels."},
-    {GST_PIXCI_VIDEO_FORMAT_Video_720x576i_50Hz_Y_Color,
-          "Video 720x576i 50Hz Y/Color",
-        "PAL (B,D,G,H,I) S-Video, capturing 720 pixels per line, 576 lines, color YCrCb pixels. Same as 'PAL/YC'."},
-    {GST_PIXCI_VIDEO_FORMAT_XGA_1024x768_60Hz_RGB, "XGA 1024x768 60Hz RGB",
-        "Progressive RGB+HSYNC+VSYNC component XGA video, 60 Hz, capturing 1024 pixels per line, 768 lines, RGB color pixels."},
+    {GST_VEINVP_VIDEO_FORMAT_NV3B, "NV3B",
+        "NV3B Camera."},
+    {GST_VEINVP_VIDEO_FORMAT_NV4, "NV4",
+        "NV4 Camera."},
     {0, NULL, NULL},
   };
 
@@ -515,7 +427,7 @@ gst_pixcisrc_start (GstBaseSrc * bsrc)
       return FALSE;
     }
 
-    pxerr = pxd_PIXCIopen (src->driver_params, NULL, src->format_file);
+    return FALSE; // pxerr = pxd_PIXCIopen (src->driver_params, NULL, src->format_file);
   } else {
     GEnumClass *video_format_enum_class;
     GEnumValue *video_format_enum_value;
@@ -523,27 +435,26 @@ gst_pixcisrc_start (GstBaseSrc * bsrc)
     video_format_enum_value =
         g_enum_get_value (video_format_enum_class, src->format_name);
     pxerr =
-        pxd_PIXCIopen (src->driver_params, video_format_enum_value->value_name,
-        NULL);
+        veinvp_openCamera (video_format_enum_value->value_name);
     g_type_class_unref (video_format_enum_class);
   }
 
   if (pxerr) {
     char buf[1024];
-    pxd_mesgFaultText (src->unitmap, buf, 1024);
+    veinvp_mesgFaultText (buf, 1024);
     GST_ELEMENT_ERROR (src, LIBRARY, INIT,
-        ("Failed to open XCLIB library and driver"), ("%s", buf));
+        ("Failed to open VeInvp library and driver"), ("%s", buf));
     return FALSE;
   }
   src->pixci_open = TRUE;
 
-  GST_DEBUG_OBJECT (src, "DriverId: %s", pxd_infoDriverId ());
-  GST_DEBUG_OBJECT (src, "LibraryId: %s", pxd_infoLibraryId ());
+  GST_DEBUG_OBJECT (src, "DriverId: %s", veinvp_infoDriverId ());
+  GST_DEBUG_OBJECT (src, "LibraryId: %s", veinvp_infoLibraryId ());
   GST_DEBUG_OBJECT (src, "Frame buffer memory: %d",
-      pxd_infoMemsize (src->unitmap));
-  GST_DEBUG_OBJECT (src, "Model: %d", pxd_infoModel (src->unitmap));
-  GST_DEBUG_OBJECT (src, "SubModel: %d", pxd_infoSubmodel (src->unitmap));
-  GST_DEBUG_OBJECT (src, "Units: %d", pxd_infoUnits ());
+       veinvp_infoMemsize ());
+  GST_DEBUG_OBJECT (src, "Model: %d", veinvp_infoModel ());
+  GST_DEBUG_OBJECT (src, "SubModel: %d", veinvp_infoSubmodel ());
+  GST_DEBUG_OBJECT (src, "Units: %d", veinvp_infoUnits ());
 
   return TRUE;
 }
@@ -555,7 +466,7 @@ gst_pixcisrc_stop (GstBaseSrc * bsrc)
 
   GST_DEBUG_OBJECT (src, "stop");
 
-  pxd_PIXCIclose ();
+  veinvp_closeCamera ();
   src->pixci_open = FALSE;
 
   /* TODO: stop acq/release cam? */
@@ -582,17 +493,17 @@ gst_pixcisrc_get_caps (GstBaseSrc * bsrc, GstCaps * filter)
     /* Create video info */
     gst_video_info_init (&vinfo);
 
-    width = pxd_imageXdim ();
-    height = pxd_imageYdim ();
+    width = veinvp_imageXdim();
+    height = veinvp_imageYdim();
 
-    par = pxd_imageAspectRatio ();
+    par = veinvp_imageAspectRatio();
     if (par != 0) {
       vinfo.par_d = 10000;
       vinfo.par_n = (gint) (par * vinfo.par_d);
     }
 
-    src->bits_per_component = pxd_imageBdim ();
-    src->components = pxd_imageCdim ();
+    src->bits_per_component = veinvp_imageBdim();
+    src->components = veinvp_imageCdim();
 
     if (src->components == 1 && src->bits_per_component <= 8) {
       src->format = GST_VIDEO_FORMAT_GRAY8;
@@ -675,12 +586,13 @@ gst_pixcisrc_create (GstPushSrc * psrc, GstBuffer ** buf)
 {
   GstPixciSrc *src = GST_PIXCI_SRC (psrc);
   guint dropped_frame_count = 0;
-  guint new_dropped_frames;
+  //guint new_dropped_frames;
   gint i;
-  guint n;
+  //guint n;
   GstMapInfo minfo;
-  pxbuffer_t buffer = 1;
-  int pxerr;
+  //pxbuffer_t buffer = 1;
+  //int pxerr;
+  guint framesCaptured = 0;
 
   /* Start acquisition */
   if (!src->acq_started) {
@@ -729,12 +641,13 @@ gst_pixcisrc_create (GstPushSrc * psrc, GstBuffer ** buf)
   //    src->frame_start_count - src->buffer_ready_count;
 
   //g_mutex_unlock (&src->mutex);
-  pxerr = pxd_doSnap (src->unitmap, buffer, src->timeout);
-  if (pxerr) {
-    GST_ELEMENT_ERROR (src, RESOURCE, FAILED,
-        (("Failed to get buffer.")), (NULL));
-    return GST_FLOW_ERROR;
-  }
+
+  //pxerr = pxd_doSnap (src->unitmap, buffer, src->timeout);
+  //if (pxerr) {
+  //  GST_ELEMENT_ERROR (src, RESOURCE, FAILED,
+  //      (("Failed to get buffer.")), (NULL));
+  //  return GST_FLOW_ERROR;
+  //}
 
   /* TODO: use allocator or use from Pixci pool */
   *buf = gst_buffer_new_and_alloc (src->height * src->gst_stride);
@@ -745,8 +658,9 @@ gst_pixcisrc_create (GstPushSrc * psrc, GstBuffer ** buf)
       "GstBuffer size=%d, gst_stride=%d, phx_stride=%d", minfo.size,
       src->gst_stride, src->px_stride);
   /* TODO: must use readuchar for 8-bit buffers */
-  pxd_readushort (src->unitmap, buffer, 0, 0, -1, -1, minfo.data, minfo.size,
-      "Grey");
+  //pxd_readushort (src->unitmap, buffer, 0, 0, -1, -1, minfo.data, minfo.size,
+  //    "Grey");
+  veinvp_doSnap(minfo.data, minfo.size, &framesCaptured);
 
   /* Make XCLIB ushort pixels into gStreamer GRAY16_LE pixels */
   if (src->format == GST_VIDEO_FORMAT_GRAY16_LE &&
