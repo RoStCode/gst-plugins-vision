@@ -753,8 +753,9 @@ gst_pixcisrc_create (GstPushSrc * psrc, GstBuffer ** buf)
       src->components == 1 &&
       src->bits_per_component > 8 && src->bits_per_component <= 16) {
     gint bitshifts = 16 - src->bits_per_component;
-    for (i = 0; i < minfo.size; i++) {
-      minfo.data[i] = minfo.data[i] << bitshifts;
+    guint16* data16 = (guint16*)minfo.data;
+    for (i = 0; i < (minfo.size / 2); i++) {
+      data16[i] = data16[i] << bitshifts;
     }
   }
 
