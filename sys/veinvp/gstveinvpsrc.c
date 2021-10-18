@@ -17,16 +17,16 @@
  * Boston, MA 02110-1335, USA.
  */
 /**
- * SECTION:element-gstpixcisrc
+ * SECTION:element-gstveinvpsrc
  *
- * The pixcisrc element is a source for EPIX PIXCI framegrabbers supported by EPIX XCLIB.
+ * The veinvpsrc element is a source for Veoneer VEINVP framegrabbers supported by Veoneer invp lib.
  *
  * <refsect2>
  * <title>Example launch line</title>
  * |[
- * gst-launch -v pixcisrc ! ffmpegcolorspace ! autovideosink
+ * gst-launch -v veinvpsrc ! ffmpegcolorspace ! autovideosink
  * ]|
- * Shows video from the default Pixci framegrabber
+ * Shows video from the default Veinvp framegrabber
  * </refsect2>
  */
 
@@ -42,25 +42,25 @@
 
 #include "gstveinvpsrc.h"
 
-GST_DEBUG_CATEGORY_STATIC (gst_pixcisrc_debug);
-#define GST_CAT_DEFAULT gst_pixcisrc_debug
+GST_DEBUG_CATEGORY_STATIC (gst_veinvpsrc_debug);
+#define GST_CAT_DEFAULT gst_veinvpsrc_debug
 
 /* prototypes */
-static void gst_pixcisrc_set_property (GObject * object,
+static void gst_veinvpsrc_set_property (GObject * object,
     guint property_id, const GValue * value, GParamSpec * pspec);
-static void gst_pixcisrc_get_property (GObject * object,
+static void gst_veinvpsrc_get_property (GObject * object,
     guint property_id, GValue * value, GParamSpec * pspec);
-static void gst_pixcisrc_dispose (GObject * object);
-static void gst_pixcisrc_finalize (GObject * object);
+static void gst_veinvpsrc_dispose (GObject * object);
+static void gst_veinvpsrc_finalize (GObject * object);
 
-static gboolean gst_pixcisrc_start (GstBaseSrc * src);
-static gboolean gst_pixcisrc_stop (GstBaseSrc * src);
-static GstCaps *gst_pixcisrc_get_caps (GstBaseSrc * src, GstCaps * filter);
-static gboolean gst_pixcisrc_set_caps (GstBaseSrc * src, GstCaps * caps);
+static gboolean gst_veinvpsrc_start (GstBaseSrc * src);
+static gboolean gst_veinvpsrc_stop (GstBaseSrc * src);
+static GstCaps *gst_veinvpsrc_get_caps (GstBaseSrc * src, GstCaps * filter);
+static gboolean gst_veinvpsrc_set_caps (GstBaseSrc * src, GstCaps * caps);
 
-static GstFlowReturn gst_pixcisrc_create (GstPushSrc * src, GstBuffer ** buf);
+static GstFlowReturn gst_veinvpsrc_create (GstPushSrc * src, GstBuffer ** buf);
 
-static GstCaps *gst_pixcisrc_create_caps (GstPixciSrc * src);
+static GstCaps *gst_veinvpsrc_create_caps (GstVeinvpSrc * src);
 enum
 {
   PROP_0,
@@ -83,7 +83,7 @@ enum
 
 /* pad templates */
 
-static GstStaticPadTemplate gst_pixcisrc_src_template =
+static GstStaticPadTemplate gst_veinvpsrc_src_template =
 GST_STATIC_PAD_TEMPLATE ("src",
     GST_PAD_SRC,
     GST_PAD_ALWAYS,
@@ -91,12 +91,12 @@ GST_STATIC_PAD_TEMPLATE ("src",
     );
 
 
-#define GST_TYPE_PIXCI_VIDEO_FORMAT (gst_pixci_video_format_get_type())
+#define GST_TYPE_VEINVP_VIDEO_FORMAT (gst_veinvp_video_format_get_type())
 static GType
-gst_pixci_video_format_get_type (void)
+gst_veinvp_video_format_get_type (void)
 {
-  static GType pixci_video_format_type = 0;
-  static const GEnumValue pixci_video_format[] = {
+  static GType veinvp_video_format_type = 0;
+  static const GEnumValue veinvp_video_format[] = {
     {GST_VEINVP_VIDEO_FORMAT_NV3B, "NV3B",
         "NV3B Camera."},
     {GST_VEINVP_VIDEO_FORMAT_NV4, "NV4",
@@ -104,51 +104,51 @@ gst_pixci_video_format_get_type (void)
     {0, NULL, NULL},
   };
 
-  if (!pixci_video_format_type) {
-    pixci_video_format_type =
-        g_enum_register_static ("GstPixciVideoFormat", pixci_video_format);
+  if (!veinvp_video_format_type) {
+    veinvp_video_format_type =
+        g_enum_register_static ("GstVeinvpVideoFormat", veinvp_video_format);
   }
-  return pixci_video_format_type;
+  return veinvp_video_format_type;
 }
 
 
 /* class initialization */
 
-G_DEFINE_TYPE (GstPixciSrc, gst_pixcisrc, GST_TYPE_PUSH_SRC);
+G_DEFINE_TYPE (GstVeinvpSrc, gst_veinvpsrc, GST_TYPE_PUSH_SRC);
 
 static void
-gst_pixcisrc_class_init (GstPixciSrcClass * klass)
+gst_veinvpsrc_class_init (GstVeinvpSrcClass * klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
   GstElementClass *gstelement_class = GST_ELEMENT_CLASS (klass);
   GstBaseSrcClass *gstbasesrc_class = GST_BASE_SRC_CLASS (klass);
   GstPushSrcClass *gstpushsrc_class = GST_PUSH_SRC_CLASS (klass);
 
-  gobject_class->set_property = gst_pixcisrc_set_property;
-  gobject_class->get_property = gst_pixcisrc_get_property;
-  gobject_class->dispose = gst_pixcisrc_dispose;
-  gobject_class->finalize = gst_pixcisrc_finalize;
+  gobject_class->set_property = gst_veinvpsrc_set_property;
+  gobject_class->get_property = gst_veinvpsrc_get_property;
+  gobject_class->dispose = gst_veinvpsrc_dispose;
+  gobject_class->finalize = gst_veinvpsrc_finalize;
 
   gst_element_class_add_pad_template (gstelement_class,
-      gst_static_pad_template_get (&gst_pixcisrc_src_template));
+      gst_static_pad_template_get (&gst_veinvpsrc_src_template));
 
   gst_element_class_set_static_metadata (gstelement_class,
-      "EPIX PIXCI Video Source", "Source/Video",
-      "EPIX PIXCI framegrabber video source",
-      "Joshua M. Doe <oss@nvl.army.mil>");
+      "Veoneer VEINVP Video Source", "Source/Video",
+      "Veoneer VEINVP Bob video source",
+      "JoakimAl <89516402+JoakimAl@users.noreply.github.com>");
 
-  gstbasesrc_class->start = GST_DEBUG_FUNCPTR (gst_pixcisrc_start);
-  gstbasesrc_class->stop = GST_DEBUG_FUNCPTR (gst_pixcisrc_stop);
-  gstbasesrc_class->get_caps = GST_DEBUG_FUNCPTR (gst_pixcisrc_get_caps);
-  gstbasesrc_class->set_caps = GST_DEBUG_FUNCPTR (gst_pixcisrc_set_caps);
+  gstbasesrc_class->start = GST_DEBUG_FUNCPTR (gst_veinvpsrc_start);
+  gstbasesrc_class->stop = GST_DEBUG_FUNCPTR (gst_veinvpsrc_stop);
+  gstbasesrc_class->get_caps = GST_DEBUG_FUNCPTR (gst_veinvpsrc_get_caps);
+  gstbasesrc_class->set_caps = GST_DEBUG_FUNCPTR (gst_veinvpsrc_set_caps);
 
-  gstpushsrc_class->create = GST_DEBUG_FUNCPTR (gst_pixcisrc_create);
+  gstpushsrc_class->create = GST_DEBUG_FUNCPTR (gst_veinvpsrc_create);
 
   /* Install GObject properties */
   g_object_class_install_property (gobject_class, PROP_FORMAT_NAME,
       g_param_spec_enum ("format-name", "Format name",
           "Video format of the camera. If set, format-file will override this.",
-          GST_TYPE_PIXCI_VIDEO_FORMAT, DEFAULT_PROP_FORMAT_NAME,
+          GST_TYPE_VEINVP_VIDEO_FORMAT, DEFAULT_PROP_FORMAT_NAME,
           G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE |
           GST_PARAM_MUTABLE_READY));
   g_object_class_install_property (gobject_class, PROP_FORMAT_FILE,
@@ -184,7 +184,7 @@ gst_pixcisrc_class_init (GstPixciSrcClass * klass)
 }
 
 static void
-gst_pixcisrc_init (GstPixciSrc * src)
+gst_veinvpsrc_init (GstVeinvpSrc * src)
 {
   /* set source as live (no preroll) */
   gst_base_src_set_live (GST_BASE_SRC (src), TRUE);
@@ -200,9 +200,9 @@ gst_pixcisrc_init (GstPixciSrc * src)
 
   /* this selects the first unit, make this a property? */
   src->unitmap = 1;
-  src->pixci_open = FALSE;
+  src->veinvp_open = FALSE;
 
-  src->first_pixci_ts = GST_CLOCK_TIME_NONE;
+  src->first_veinvp_ts = GST_CLOCK_TIME_NONE;
   src->frame_start_times = g_new (guint64, src->num_capture_buffers);
   src->frame_end_times = g_new (guint64, src->num_capture_buffers);
   src->buffer_ready = FALSE;
@@ -213,19 +213,19 @@ gst_pixcisrc_init (GstPixciSrc * src)
   src->buffer_processed_count = 0;
   src->frame_end_count = 0;
   src->frame_start_count = 0;
-  /*pixcisrc->frame_count = 0; */
+  /*veinvpsrc->frame_count = 0; */
 
   g_mutex_init (&src->mutex);
   g_cond_init (&src->cond);
 }
 
 void
-gst_pixcisrc_set_property (GObject * object, guint property_id,
+gst_veinvpsrc_set_property (GObject * object, guint property_id,
     const GValue * value, GParamSpec * pspec)
 {
-  GstPixciSrc *src;
+  GstVeinvpSrc *src;
 
-  src = GST_PIXCI_SRC (object);
+  src = GST_VEINVP_SRC (object);
 
   switch (property_id) {
     case PROP_FORMAT_NAME:
@@ -270,13 +270,13 @@ gst_pixcisrc_set_property (GObject * object, guint property_id,
 }
 
 void
-gst_pixcisrc_get_property (GObject * object, guint property_id,
+gst_veinvpsrc_get_property (GObject * object, guint property_id,
     GValue * value, GParamSpec * pspec)
 {
-  GstPixciSrc *src;
+  GstVeinvpSrc *src;
 
-  g_return_if_fail (GST_IS_PIXCI_SRC (object));
-  src = GST_PIXCI_SRC (object);
+  g_return_if_fail (GST_IS_VEINVP_SRC (object));
+  src = GST_VEINVP_SRC (object);
 
   switch (property_id) {
     case PROP_FORMAT_NAME:
@@ -307,25 +307,25 @@ gst_pixcisrc_get_property (GObject * object, guint property_id,
 }
 
 void
-gst_pixcisrc_dispose (GObject * object)
+gst_veinvpsrc_dispose (GObject * object)
 {
-  GstPixciSrc *src;
+  GstVeinvpSrc *src;
 
-  g_return_if_fail (GST_IS_PIXCI_SRC (object));
-  src = GST_PIXCI_SRC (object);
+  g_return_if_fail (GST_IS_VEINVP_SRC (object));
+  src = GST_VEINVP_SRC (object);
 
   /* clean up as possible.  may be called multiple times */
 
-  G_OBJECT_CLASS (gst_pixcisrc_parent_class)->dispose (object);
+  G_OBJECT_CLASS (gst_veinvpsrc_parent_class)->dispose (object);
 }
 
 void
-gst_pixcisrc_finalize (GObject * object)
+gst_veinvpsrc_finalize (GObject * object)
 {
-  GstPixciSrc *src;
+  GstVeinvpSrc *src;
 
-  g_return_if_fail (GST_IS_PIXCI_SRC (object));
-  src = GST_PIXCI_SRC (object);
+  g_return_if_fail (GST_IS_VEINVP_SRC (object));
+  src = GST_VEINVP_SRC (object);
 
   /* clean up object here */
   g_free (src->format_file);
@@ -334,87 +334,87 @@ gst_pixcisrc_finalize (GObject * object)
   g_free (src->frame_start_times);
   g_free (src->frame_end_times);
 
-  G_OBJECT_CLASS (gst_pixcisrc_parent_class)->finalize (object);
+  G_OBJECT_CLASS (gst_veinvpsrc_parent_class)->finalize (object);
 }
 
 //static inline GstClockTime
-//gst_pixci_get_timestamp (GstPixciSrc * pixcisrc)
+//gst_veinvp_get_timestamp (GstVeinvpSrc * veinvpsrc)
 //{
 //  ui32 dwParam;
 //  guint64 timestamp;
 //
 //  /* get time in microseconds from start of acquisition */
 //  /* TODO: check for rollover */
-//  PHX_ParameterGet (pixcisrc->hCamera, PHX_EVENTCOUNT, &dwParam);
+//  PHX_ParameterGet (veinvpsrc->hCamera, PHX_EVENTCOUNT, &dwParam);
 //  timestamp = (guint64) 1000 *dwParam;
 //
-//  if (pixcisrc->first_pixci_ts == GST_CLOCK_TIME_NONE) {
-//    pixcisrc->first_pixci_ts = timestamp;
+//  if (veinvpsrc->first_veinvp_ts == GST_CLOCK_TIME_NONE) {
+//    veinvpsrc->first_veinvp_ts = timestamp;
 //  }
-//  return timestamp - pixcisrc->first_pixci_ts;
+//  return timestamp - veinvpsrc->first_veinvp_ts;
 //}
 
 /* Callback function to handle image capture events. */
 //void
 //phx_callback (tHandle hCamera, ui32 dwMask, void *pvParams)
 //{
-//  GstPixciSrc *pixcisrc = GST_PIXCI_SRC (pvParams);
-//  GstClockTime ct = gst_pixci_get_timestamp (pixcisrc);
+//  GstVeinvpSrc *veinvpsrc = GST_VEINVP_SRC (pvParams);
+//  GstClockTime ct = gst_veinvp_get_timestamp (veinvpsrc);
 //  gboolean signal_create_func = FALSE;
 //  guint n;
 //
-//  g_mutex_lock (&pixcisrc->mutex);
+//  g_mutex_lock (&veinvpsrc->mutex);
 //
 //  /* Note that more than one interrupt can be sent, so no "else if" */
 //
 //  /* called when frame valid signal goes high */
 //  if (PHX_INTRPT_FRAME_START & dwMask) {
 //    /* FIXME: this will work until frames are dropped */
-//    n = pixcisrc->frame_start_count % pixcisrc->num_capture_buffers;
-//    pixcisrc->frame_start_times[n] = ct;
+//    n = veinvpsrc->frame_start_count % veinvpsrc->num_capture_buffers;
+//    veinvpsrc->frame_start_times[n] = ct;
 //
-//    pixcisrc->frame_start_count++;
+//    veinvpsrc->frame_start_count++;
 //  }
 //
 //  /* called when frame valid signal goes low */
 //  if (PHX_INTRPT_FRAME_END & dwMask) {
 //    /* FIXME: this will work until frames are dropped */
-//    n = (pixcisrc->frame_end_count - 1) % pixcisrc->num_capture_buffers;
-//    pixcisrc->frame_end_times[n] = ct;
+//    n = (veinvpsrc->frame_end_count - 1) % veinvpsrc->num_capture_buffers;
+//    veinvpsrc->frame_end_times[n] = ct;
 //
-//    pixcisrc->frame_end_count++;
+//    veinvpsrc->frame_end_count++;
 //  }
 //
 //  if (PHX_INTRPT_BUFFER_READY & dwMask) {
 //    /* we have a buffer */
-//    pixcisrc->buffer_ready = TRUE;
-//    pixcisrc->buffer_ready_count++;
+//    veinvpsrc->buffer_ready = TRUE;
+//    veinvpsrc->buffer_ready_count++;
 //    signal_create_func = TRUE;
 //  }
 //
 //  if (PHX_INTRPT_TIMEOUT & dwMask) {
 //    /* TODO: we could offer to try and ABORT then re-START capture */
-//    pixcisrc->timeout_occurred = TRUE;
+//    veinvpsrc->timeout_occurred = TRUE;
 //    signal_create_func = TRUE;
 //  }
 //
 //  if (PHX_INTRPT_FIFO_OVERFLOW & dwMask) {
-//    pixcisrc->fifo_overflow_occurred = TRUE;
+//    veinvpsrc->fifo_overflow_occurred = TRUE;
 //    signal_create_func = TRUE;
 //  }
 //
 //
 //
 //  if (signal_create_func)
-//    g_cond_signal (&pixcisrc->cond);
-//  g_mutex_unlock (&pixcisrc->mutex);
+//    g_cond_signal (&veinvpsrc->cond);
+//  g_mutex_unlock (&veinvpsrc->mutex);
 //  /* after unlocking, _create will check for these errors and copy data */
 //}
 
 static gboolean
-gst_pixcisrc_start (GstBaseSrc * bsrc)
+gst_veinvpsrc_start (GstBaseSrc * bsrc)
 {
-  GstPixciSrc *src = GST_PIXCI_SRC (bsrc);
+  GstVeinvpSrc *src = GST_VEINVP_SRC (bsrc);
   int pxerr;
 
   GST_DEBUG_OBJECT (src, "start");
@@ -427,11 +427,11 @@ gst_pixcisrc_start (GstBaseSrc * bsrc)
       return FALSE;
     }
 
-    return FALSE; // pxerr = pxd_PIXCIopen (src->driver_params, NULL, src->format_file);
+    return FALSE; // pxerr = pxd_VEINVPopen (src->driver_params, NULL, src->format_file);
   } else {
     GEnumClass *video_format_enum_class;
     GEnumValue *video_format_enum_value;
-    video_format_enum_class = g_type_class_ref (GST_TYPE_PIXCI_VIDEO_FORMAT);
+    video_format_enum_class = g_type_class_ref (GST_TYPE_VEINVP_VIDEO_FORMAT);
     video_format_enum_value =
         g_enum_get_value (video_format_enum_class, src->format_name);
     pxerr =
@@ -446,7 +446,7 @@ gst_pixcisrc_start (GstBaseSrc * bsrc)
         ("Failed to open VeInvp library and driver"), ("%s", buf));
     return FALSE;
   }
-  src->pixci_open = TRUE;
+  src->veinvp_open = TRUE;
 
   GST_DEBUG_OBJECT (src, "DriverId: %s", veinvp_infoDriverId ());
   GST_DEBUG_OBJECT (src, "LibraryId: %s", veinvp_infoLibraryId ());
@@ -460,31 +460,31 @@ gst_pixcisrc_start (GstBaseSrc * bsrc)
 }
 
 static gboolean
-gst_pixcisrc_stop (GstBaseSrc * bsrc)
+gst_veinvpsrc_stop (GstBaseSrc * bsrc)
 {
-  GstPixciSrc *src = GST_PIXCI_SRC (bsrc);
+  GstVeinvpSrc *src = GST_VEINVP_SRC (bsrc);
 
   GST_DEBUG_OBJECT (src, "stop");
 
   veinvp_closeCamera ();
-  src->pixci_open = FALSE;
+  src->veinvp_open = FALSE;
 
   /* TODO: stop acq/release cam? */
 
   src->dropped_frame_count = 0;
-  /*pixcisrc->last_time_code = -1; */
+  /*veinvpsrc->last_time_code = -1; */
 
   return TRUE;
 }
 
 static GstCaps *
-gst_pixcisrc_get_caps (GstBaseSrc * bsrc, GstCaps * filter)
+gst_veinvpsrc_get_caps (GstBaseSrc * bsrc, GstCaps * filter)
 {
-  GstPixciSrc *src = GST_PIXCI_SRC (bsrc);
+  GstVeinvpSrc *src = GST_VEINVP_SRC (bsrc);
   GstCaps *caps;
   gint width, height;
 
-  if (!src->pixci_open) {
+  if (!src->veinvp_open) {
     caps = gst_pad_get_pad_template_caps (GST_BASE_SRC_PAD (src));
   } else {
     gdouble par;
@@ -557,9 +557,9 @@ Error:
 }
 
 static gboolean
-gst_pixcisrc_set_caps (GstBaseSrc * bsrc, GstCaps * caps)
+gst_veinvpsrc_set_caps (GstBaseSrc * bsrc, GstCaps * caps)
 {
-  GstPixciSrc *src = GST_PIXCI_SRC (bsrc);
+  GstVeinvpSrc *src = GST_VEINVP_SRC (bsrc);
   GstVideoInfo vinfo;
   GstStructure *s = gst_caps_get_structure (caps, 0);
 
@@ -582,9 +582,9 @@ unsupported_caps:
 }
 
 static GstFlowReturn
-gst_pixcisrc_create (GstPushSrc * psrc, GstBuffer ** buf)
+gst_veinvpsrc_create (GstPushSrc * psrc, GstBuffer ** buf)
 {
-  GstPixciSrc *src = GST_PIXCI_SRC (psrc);
+  GstVeinvpSrc *src = GST_VEINVP_SRC (psrc);
   guint dropped_frame_count = 0;
   //guint new_dropped_frames;
   gint i;
@@ -649,7 +649,7 @@ gst_pixcisrc_create (GstPushSrc * psrc, GstBuffer ** buf)
   //  return GST_FLOW_ERROR;
   //}
 
-  /* TODO: use allocator or use from Pixci pool */
+  /* TODO: use allocator or use from Veinvp pool */
   *buf = gst_buffer_new_and_alloc (src->height * src->gst_stride);
 
   /* Copy image to buffer from surface TODO: use orc_memcpy */
@@ -708,10 +708,10 @@ gst_pixcisrc_create (GstPushSrc * psrc, GstBuffer ** buf)
 static gboolean
 plugin_init (GstPlugin * plugin)
 {
-  GST_DEBUG_CATEGORY_INIT (gst_pixcisrc_debug, "veinvpsrc", 0,
-      "debug category for pixcisrc element");
+  GST_DEBUG_CATEGORY_INIT (gst_veinvpsrc_debug, "veinvpsrc", 0,
+      "debug category for veinvpsrc element");
   gst_element_register (plugin, "veinvpsrc", GST_RANK_NONE,
-      gst_pixcisrc_get_type ());
+      gst_veinvpsrc_get_type ());
 
   return TRUE;
 }
@@ -719,6 +719,6 @@ plugin_init (GstPlugin * plugin)
 GST_PLUGIN_DEFINE (GST_VERSION_MAJOR,
     GST_VERSION_MINOR,
     veinvp,
-    "Pixci frame grabber source",
+    "Veinvp frame grabber source",
     plugin_init, GST_PACKAGE_VERSION, GST_PACKAGE_LICENSE, GST_PACKAGE_NAME,
     GST_PACKAGE_ORIGIN)

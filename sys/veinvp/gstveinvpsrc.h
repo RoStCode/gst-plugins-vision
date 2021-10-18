@@ -17,8 +17,8 @@
  * Boston, MA 02111-1307, USA.
  */
 
-#ifndef _GST_PIXCI_SRC_H_
-#define _GST_PIXCI_SRC_H_
+#ifndef _GST_VEINVP_SRC_H_
+#define _GST_VEINVP_SRC_H_
 
 #include <gst/base/gstpushsrc.h>
 
@@ -27,17 +27,17 @@
 
 G_BEGIN_DECLS
 
-#define GST_TYPE_PIXCI_SRC   (gst_pixcisrc_get_type())
-#define GST_PIXCI_SRC(obj)   (G_TYPE_CHECK_INSTANCE_CAST((obj),GST_TYPE_PIXCI_SRC,GstPixciSrc))
-#define GST_PIXCI_SRC_CLASS(klass)   (G_TYPE_CHECK_CLASS_CAST((klass),GST_TYPE_PIXCI_SRC,GstPixciSrcClass))
-#define GST_IS_PIXCI_SRC(obj)   (G_TYPE_CHECK_INSTANCE_TYPE((obj),GST_TYPE_PIXCI_SRC))
-#define GST_IS_PIXCI_SRC_CLASS(obj)   (G_TYPE_CHECK_CLASS_TYPE((klass),GST_TYPE_PIXCI_SRC))
+#define GST_TYPE_VEINVP_SRC   (gst_veinvpsrc_get_type())
+#define GST_VEINVP_SRC(obj)   (G_TYPE_CHECK_INSTANCE_CAST((obj),GST_TYPE_VEINVP_SRC,GstVeinvpSrc))
+#define GST_VEINVP_SRC_CLASS(klass)   (G_TYPE_CHECK_CLASS_CAST((klass),GST_TYPE_VEINVP_SRC,GstVeinvpSrcClass))
+#define GST_IS_VEINVP_SRC(obj)   (G_TYPE_CHECK_INSTANCE_TYPE((obj),GST_TYPE_VEINVP_SRC))
+#define GST_IS_VEINVP_SRC_CLASS(obj)   (G_TYPE_CHECK_CLASS_TYPE((klass),GST_TYPE_VEINVP_SRC))
 
-typedef struct _GstPixciSrc GstPixciSrc;
-typedef struct _GstPixciSrcClass GstPixciSrcClass;
+typedef struct _GstVeinvpSrc GstVeinvpSrc;
+typedef struct _GstVeinvpSrcClass GstVeinvpSrcClass;
 
 /**
-* GstPixciSrcConnector:
+* GstVeinvpSrcConnector:
 * @MC_Connector_VID<1..16>: channel is linked to camera at the VID<1..16> input
 * @MC_Connector_YC: channel is linked to a camera at the YC input
 * 
@@ -46,16 +46,16 @@ typedef struct _GstPixciSrcClass GstPixciSrcClass;
 */
 typedef enum {
   
-} GstPixciSrcConnector;
+} GstVeinvpSrcConnector;
 
 typedef enum {
     GST_VEINVP_VIDEO_FORMAT_NV3B,
     GST_VEINVP_VIDEO_FORMAT_NV4,
-} GstPixciVideoFormatEnum;
+} GstVeinvpVideoFormatEnum;
 
-struct _GstPixciSrc
+struct _GstVeinvpSrc
 {
-  GstPushSrc base_pixcisrc;
+  GstPushSrc base_veinvpsrc;
 
   gint dropped_frame_count;
   gboolean acq_started;
@@ -63,7 +63,7 @@ struct _GstPixciSrc
   /* camera handle */
 
   /* properties */
-  GstPixciVideoFormatEnum format_name;
+  GstVeinvpVideoFormatEnum format_name;
   gchar *format_file;
   gchar *driver_params;
   guint num_capture_buffers;
@@ -71,10 +71,10 @@ struct _GstPixciSrc
   guint channel;
   guint timeout;
 
-  gboolean pixci_open;
+  gboolean veinvp_open;
   int unitmap;
 
-  GstClockTime first_pixci_ts;
+  GstClockTime first_veinvp_ts;
   guint64 *frame_start_times;
   guint64 *frame_end_times;
   gboolean buffer_ready;
@@ -97,12 +97,12 @@ struct _GstPixciSrc
   GCond cond;
 };
 
-struct _GstPixciSrcClass
+struct _GstVeinvpSrcClass
 {
-  GstPushSrcClass base_pixcisrc_class;
+  GstPushSrcClass base_veinvpsrc_class;
 };
 
-GType gst_pixcisrc_get_type (void);
+GType gst_veinvpsrc_get_type (void);
 
 G_END_DECLS
 
